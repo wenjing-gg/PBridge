@@ -1,0 +1,12 @@
+{
+  "model_id": "Alibaba-NLP/gme-Qwen2-VL-2B-Instruct",
+  "knowledge_items": 4569,
+  "embedding_shape": [
+    4569,
+    1536
+  ],
+  "text_only_items": 978,
+  "image_text_items": 3591,
+  "image_policy": "first image_paths entry for Pediatric Imaging items",
+  "all_frozen": true
+}

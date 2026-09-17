@@ -1,0 +1,28 @@
+{
+  "method": "PBridge",
+  "reader": "MedMO-8B-Next",
+  "reader_model_dir": "/data/cyf/codes/YYY/VQA/MedMO/checkpoint/MedMO-8B-Next",
+  "dataset": "PediatricsMQA fixed 8:2 split",
+  "split": "test",
+  "metrics": {
+    "n": 413,
+    "correct": 265,
+    "accuracy": 0.6416464891041163,
+    "nll": 2.7323105335235596,
+    "brier": 0.6601271629333496
+  },
+  "metadata": {
+    "checkpoint": "/data/cyf/codes/YYY/VQA/PBridge/module1_ppr/artifacts/medmo_8b/ppr_moe.pt",
+    "gme_candidates": 20,
+    "experts": 6,
+    "top_experts_per_knowledge": 2,
+    "expert_form": "Z W_e q",
+    "router_input": "concat(q, z_i, utility_proxy_i)",
+    "expert_input_dim": 1536,
+    "reader_prefix_tokens": 3,
+    "prefix_position_encoding": "preserved reader-native multimodal MRoPE",
+    "reader_hidden_size": 4096,
+    "utility_inference": "counterfactual margin relative to the no-RAG predicted option; no test answer used",
+    "training_converged": true
+  }
+}

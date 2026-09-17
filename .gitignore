@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+
+# Local model weights
+models/
+*.safetensors
+
+# Rebuildable knowledge images and binary experiment assets
+data/pediatric_knowledge/images/
+module1_ppr/artifacts/*.npy
+module1_ppr/artifacts/*.npz
+module1_ppr/artifacts/**/*.npz
+
+# Keep the final PPR checkpoint, but ignore transient checkpoints.
+module1_ppr/artifacts/**/*.ckpt
