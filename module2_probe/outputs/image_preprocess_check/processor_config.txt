@@ -1,0 +1,331 @@
+{
+  "checkpoint": "/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint",
+  "runtime_transformers_version": "4.57.6",
+  "checkpoint_transformers_version": "4.51.3",
+  "torch_version": "2.12.1+cu130",
+  "processor_class": "transformers.models.qwen2_5_vl.processing_qwen2_5_vl.Qwen2_5_VLProcessor",
+  "image_processor_class": "transformers.models.qwen2_vl.image_processing_qwen2_vl.Qwen2VLImageProcessor",
+  "image_processor": {
+    "min_pixels": 3136,
+    "max_pixels": 12845056,
+    "size": {
+      "shortest_edge": 3136,
+      "longest_edge": 12845056
+    },
+    "patch_size": 14,
+    "merge_size": 2,
+    "temporal_patch_size": 2,
+    "do_resize": true
+  },
+  "tokenizer_init_pixel_kwargs": {
+    "min_pixels": null,
+    "max_pixels": null
+  },
+  "local_config_files": {
+    "preprocessor_config.json": {
+      "do_convert_rgb": true,
+      "do_normalize": true,
+      "do_rescale": true,
+      "do_resize": true,
+      "image_mean": [
+        0.48145466,
+        0.4578275,
+        0.40821073
+      ],
+      "image_processor_type": "Qwen2VLImageProcessor",
+      "image_std": [
+        0.26862954,
+        0.26130258,
+        0.27577711
+      ],
+      "max_pixels": 12845056,
+      "merge_size": 2,
+      "min_pixels": 3136,
+      "patch_size": 14,
+      "processor_class": "Qwen2_5_VLProcessor",
+      "resample": 3,
+      "rescale_factor": 0.00392156862745098,
+      "size": {
+        "longest_edge": 12845056,
+        "shortest_edge": 3136
+      },
+      "temporal_patch_size": 2
+    },
+    "processor_config.json": null,
+    "config.json": {
+      "architectures": [
+        "Qwen2_5_VLForConditionalGeneration"
+      ],
+      "attention_dropout": 0.0,
+      "bos_token_id": 151643,
+      "eos_token_id": 151645,
+      "hidden_act": "silu",
+      "hidden_size": 3584,
+      "image_token_id": 151655,
+      "initializer_range": 0.02,
+      "intermediate_size": 18944,
+      "max_position_embeddings": 128000,
+      "max_window_layers": 28,
+      "model_type": "qwen2_5_vl",
+      "num_attention_heads": 28,
+      "num_hidden_layers": 28,
+      "num_key_value_heads": 4,
+      "rms_norm_eps": 1e-06,
+      "rope_scaling": {
+        "mrope_section": [
+          16,
+          24,
+          24
+        ],
+        "rope_type": "default",
+        "type": "default"
+      },
+      "rope_theta": 1000000.0,
+      "sliding_window": 32768,
+      "tie_word_embeddings": false,
+      "torch_dtype": "bfloat16",
+      "transformers_version": "4.51.3",
+      "use_cache": false,
+      "use_sliding_window": false,
+      "video_token_id": 151656,
+      "vision_config": {
+        "depth": 32,
+        "fullatt_block_indexes": [
+          7,
+          15,
+          23,
+          31
+        ],
+        "hidden_act": "silu",
+        "hidden_size": 1280,
+        "in_channels": 3,
+        "in_chans": 3,
+        "intermediate_size": 3420,
+        "model_type": "qwen2_5_vl",
+        "num_heads": 16,
+        "out_hidden_size": 3584,
+        "patch_size": 14,
+        "spatial_merge_size": 2,
+        "spatial_patch_size": 14,
+        "temporal_patch_size": 2,
+        "tokens_per_second": 2,
+        "torch_dtype": "bfloat16",
+        "window_size": 112
+      },
+      "vision_end_token_id": 151653,
+      "vision_start_token_id": 151652,
+      "vision_token_id": 151654,
+      "vocab_size": 152064
+    },
+    "tokenizer_config.json": {
+      "add_bos_token": false,
+      "add_prefix_space": false,
+      "added_tokens_decoder": {
+        "151643": {
+          "content": "<|endoftext|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151644": {
+          "content": "<|im_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151645": {
+          "content": "<|im_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151646": {
+          "content": "<|object_ref_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151647": {
+          "content": "<|object_ref_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151648": {
+          "content": "<|box_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151649": {
+          "content": "<|box_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151650": {
+          "content": "<|quad_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151651": {
+          "content": "<|quad_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151652": {
+          "content": "<|vision_start|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151653": {
+          "content": "<|vision_end|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151654": {
+          "content": "<|vision_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151655": {
+          "content": "<|image_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151656": {
+          "content": "<|video_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": true
+        },
+        "151657": {
+          "content": "<tool_call>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151658": {
+          "content": "</tool_call>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151659": {
+          "content": "<|fim_prefix|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151660": {
+          "content": "<|fim_middle|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151661": {
+          "content": "<|fim_suffix|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151662": {
+          "content": "<|fim_pad|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151663": {
+          "content": "<|repo_name|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        },
+        "151664": {
+          "content": "<|file_sep|>",
+          "lstrip": false,
+          "normalized": false,
+          "rstrip": false,
+          "single_word": false,
+          "special": false
+        }
+      },
+      "additional_special_tokens": [
+        "<|im_start|>",
+        "<|im_end|>",
+        "<|object_ref_start|>",
+        "<|object_ref_end|>",
+        "<|box_start|>",
+        "<|box_end|>",
+        "<|quad_start|>",
+        "<|quad_end|>",
+        "<|vision_start|>",
+        "<|vision_end|>",
+        "<|vision_pad|>",
+        "<|image_pad|>",
+        "<|video_pad|>"
+      ],
+      "bos_token": null,
+      "chat_template": "{% set image_count = namespace(value=0) %}{% set video_count = namespace(value=0) %}{% for message in messages %}{% if loop.first and message['role'] != 'system' %}<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n{% endif %}<|im_start|>{{ message['role'] }}\n{% if message['content'] is string %}{{ message['content'] }}<|im_end|>\n{% else %}{% for content in message['content'] %}{% if content['type'] == 'image' or 'image' in content or 'image_url' in content %}{% set image_count.value = image_count.value + 1 %}{% if add_vision_id %}Picture {{ image_count.value }}: {% endif %}<|vision_start|><|image_pad|><|vision_end|>{% elif content['type'] == 'video' or 'video' in content %}{% set video_count.value = video_count.value + 1 %}{% if add_vision_id %}Video {{ video_count.value }}: {% endif %}<|vision_start|><|video_pad|><|vision_end|>{% elif 'text' in content %}{{ content['text'] }}{% endif %}{% endfor %}<|im_end|>\n{% endif %}{% endfor %}{% if add_generation_prompt %}<|im_start|>assistant\n{% endif %}",
+      "clean_up_tokenization_spaces": false,
+      "eos_token": "<|im_end|>",
+      "errors": "replace",
+      "extra_special_tokens": {},
+      "model_max_length": 131072,
+      "pad_token": "<|endoftext|>",
+      "padding_side": "right",
+      "processor_class": "Qwen2_5_VLProcessor",
+      "split_special_tokens": false,
+      "tokenizer_class": "Qwen2Tokenizer",
+      "unk_token": null
+    }
+  }
+}

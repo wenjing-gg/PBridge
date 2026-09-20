@@ -1,0 +1,31 @@
+{
+  "method": "PBridge",
+  "reader": "Lingshu-7B",
+  "reader_model_dir": "/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint",
+  "dataset": "PediatricsMQA fixed 8:2 split",
+  "split": "test",
+  "metrics": {
+    "n": 413,
+    "correct": 272,
+    "accuracy": 0.6585956416464891,
+    "nll": 2.993332624435425,
+    "brier": 0.6452922224998474
+  },
+  "metadata": {
+    "checkpoint": "/data/cyf/codes/YYY/VQA/PBridge/module1_ppr/artifacts/lingshu_7b/ppr_moe.pt",
+    "gme_candidates": 20,
+    "experts": 6,
+    "top_experts_per_knowledge": 2,
+    "expert_form": "Z W_e q",
+    "router_input": "concat(q, z_i, utility_proxy_i)",
+    "expert_input_dim": 1536,
+    "reader_prefix_tokens": 3,
+    "image_min_pixels": 3136,
+    "image_max_pixels": 12845056,
+    "visual_token_mode": "native_multiple",
+    "prefix_position_encoding": "preserved reader-native multimodal MRoPE",
+    "reader_hidden_size": 3584,
+    "utility_inference": "counterfactual margin relative to the no-RAG predicted option; no test answer used",
+    "training_converged": true
+  }
+}

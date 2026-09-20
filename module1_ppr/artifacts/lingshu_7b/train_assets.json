@@ -1,0 +1,12 @@
+{
+  "reader": "Lingshu-7B",
+  "reader_model_dir": "/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint",
+  "visual_token_mode": "native_multiple",
+  "image_min_pixels": 3136,
+  "image_max_pixels": 12845056,
+  "reader_key": "lingshu_7b",
+  "split": "train",
+  "samples": 1654,
+  "num_shards": 4,
+  "output": "/data/cyf/codes/YYY/VQA/PBridge/module1_ppr/artifacts/lingshu_7b/train_assets.npz"
+}

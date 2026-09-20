@@ -1,0 +1,23 @@
+{
+  "n": 413,
+  "representations": {
+    "bytes": 413
+  },
+  "width": {
+    "min": 306,
+    "max": 600,
+    "median": 500.0
+  },
+  "height": {
+    "min": 133,
+    "max": 664,
+    "median": 450.0
+  },
+  "area": {
+    "min": 66500,
+    "max": 339968,
+    "median": 221000.0
+  },
+  "sample_count": 20,
+  "all_sample_sizes_unchanged_before_processor": true
+}

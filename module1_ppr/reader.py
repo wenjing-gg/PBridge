@@ -1,4 +1,4 @@
-"""Frozen MedMO-8B reader with optional learned prefix tokens."""
+"""Frozen Lingshu-7B reader with optional learned prefix tokens."""
 
 from __future__ import annotations
 
@@ -9,11 +9,9 @@ import torch
 from PIL import Image
 
 
-MEDMO8B_DIR = Path(
-    "/data/cyf/codes/YYY/VQA/MedMO/checkpoint/MedMO-8B-Next"
-)
-READER_KEY = "medmo_8b"
-READER_NAME = "MedMO-8B-Next"
+LINGSHU7B_DIR = Path("/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint")
+READER_KEY = "lingshu_7b"
+READER_NAME = "Lingshu-7B"
 LABELS = "ABCD"
 
 
@@ -43,7 +41,7 @@ def load_image(value: Any) -> Image.Image:
     raise ValueError("Unsupported image representation")
 
 
-def medmo_prompt(
+def pbridge_prompt(
     question: str,
     options: list[str],
     prior_texts: list[str],
@@ -73,18 +71,30 @@ def medmo_prompt(
 
 
 class FrozenReader:
+    reader_key = READER_KEY
+    reader_name = READER_NAME
+    model_dir = LINGSHU7B_DIR
+    visual_token_mode = "native_multiple"
+
     def __init__(self, device_name: str):
-        from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+        from transformers import (
+            AutoProcessor,
+            Qwen2_5_VLForConditionalGeneration,
+        )
 
         self.device = torch.device(device_name)
         self.processor = AutoProcessor.from_pretrained(
-            str(MEDMO8B_DIR),
+            str(LINGSHU7B_DIR),
             local_files_only=True,
+            use_fast=False,
         )
         self.processor.tokenizer.padding_side = "left"
+        self.image_min_pixels = int(self.processor.image_processor.min_pixels)
+        self.image_max_pixels = int(self.processor.image_processor.max_pixels)
+        self._validated_image_tokens = False
         dtype = torch.bfloat16 if self.device.type == "cuda" else torch.float32
-        self.model = Qwen3VLForConditionalGeneration.from_pretrained(
-            str(MEDMO8B_DIR),
+        self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            str(LINGSHU7B_DIR),
             local_files_only=True,
             dtype=dtype,
             device_map={"": str(self.device)}
@@ -124,7 +134,7 @@ class FrozenReader:
         options: list[str],
         prior_texts: list[str],
     ) -> str:
-        return medmo_prompt(question, options, prior_texts)
+        return pbridge_prompt(question, options, prior_texts)
 
     def _prepare(
         self,
@@ -166,6 +176,22 @@ class FrozenReader:
             padding=True,
             return_tensors="pt",
         )
+        if not self._validated_image_tokens:
+            grids = inputs["image_grid_thw"]
+            merge_area = int(self.processor.image_processor.merge_size) ** 2
+            token_counts = grids.prod(dim=-1) // merge_area
+            if bool((token_counts <= 1).any()):
+                raise RuntimeError(
+                    "Lingshu native processor produced no spatial visual "
+                    f"sequence: grids={grids.tolist()}"
+                )
+            print(
+                "Lingshu visual tokens verified: "
+                f"min={int(token_counts.min())} "
+                f"max={int(token_counts.max())}",
+                flush=True,
+            )
+            self._validated_image_tokens = True
         moved = {
             key: value.to(self.model_device) if torch.is_tensor(value) else value
             for key, value in inputs.items()
@@ -197,6 +223,7 @@ class FrozenReader:
                     "input_ids": input_ids,
                     "image_grid_thw": inputs.get("image_grid_thw"),
                     "video_grid_thw": inputs.get("video_grid_thw"),
+                    "second_per_grid_ts": inputs.get("second_per_grid_ts"),
                     "attention_mask": inputs.get("attention_mask"),
                 }
                 position_ids, _ = self.model.model.get_rope_index(**rope_kwargs)

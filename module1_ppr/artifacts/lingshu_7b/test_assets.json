@@ -1,0 +1,13 @@
+{
+  "reader": "Lingshu-7B",
+  "reader_model_dir": "/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint",
+  "visual_token_mode": "native_multiple",
+  "image_min_pixels": 3136,
+  "image_max_pixels": 12845056,
+  "split": "test",
+  "samples": 413,
+  "candidates": 20,
+  "utility_target": "not computed",
+  "utility_proxy": "counterfactual margin for the frozen reader's no-RAG prediction; does not use the gold answer",
+  "single_prior_protocol": "one raw knowledge_text in the reader prompt"
+}

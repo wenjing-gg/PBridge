@@ -1,0 +1,165 @@
+{
+  "sample_index": 0,
+  "sample_id": "a1c95f95-ca39-4c59-9529-4f51fe985817",
+  "original_size": [
+    500,
+    500
+  ],
+  "resize_factor": 28,
+  "smart_resize_default": [
+    504,
+    504
+  ],
+  "smart_resize_forced_single": [
+    28,
+    28
+  ],
+  "tests": {
+    "pbridge_default": {
+      "image_grid_thw": [
+        1,
+        36,
+        36
+      ],
+      "pixel_values_shape": [
+        1296,
+        1176
+      ],
+      "final_image_tokens": 324,
+      "tensor_shapes": {
+        "input_ids": [
+          1,
+          413
+        ],
+        "attention_mask": [
+          1,
+          413
+        ],
+        "pixel_values": [
+          1296,
+          1176
+        ],
+        "image_grid_thw": [
+          1,
+          3
+        ]
+      },
+      "image_token_count_in_input_ids": 324
+    },
+    "explicit_checkpoint_budget": {
+      "image_grid_thw": [
+        1,
+        36,
+        36
+      ],
+      "pixel_values_shape": [
+        1296,
+        1176
+      ],
+      "final_image_tokens": 324,
+      "tensor_shapes": {
+        "input_ids": [
+          1,
+          413
+        ],
+        "attention_mask": [
+          1,
+          413
+        ],
+        "pixel_values": [
+          1296,
+          1176
+        ],
+        "image_grid_thw": [
+          1,
+          3
+        ]
+      },
+      "image_token_count_in_input_ids": 324
+    },
+    "explicit_todo_budget": {
+      "image_grid_thw": [
+        1,
+        36,
+        36
+      ],
+      "pixel_values_shape": [
+        1296,
+        1176
+      ],
+      "final_image_tokens": 324,
+      "tensor_shapes": {
+        "input_ids": [
+          1,
+          413
+        ],
+        "attention_mask": [
+          1,
+          413
+        ],
+        "pixel_values": [
+          1296,
+          1176
+        ],
+        "image_grid_thw": [
+          1,
+          3
+        ]
+      },
+      "image_token_count_in_input_ids": 324
+    },
+    "forced_single_token_budget": {
+      "image_grid_thw": [
+        1,
+        2,
+        2
+      ],
+      "pixel_values_shape": [
+        4,
+        1176
+      ],
+      "final_image_tokens": 1,
+      "tensor_shapes": {
+        "input_ids": [
+          1,
+          90
+        ],
+        "attention_mask": [
+          1,
+          90
+        ],
+        "pixel_values": [
+          4,
+          1176
+        ],
+        "image_grid_thw": [
+          1,
+          3
+        ]
+      },
+      "image_token_count_in_input_ids": 1
+    },
+    "direct_image_processor_default": {
+      "image_grid_thw": [
+        1,
+        36,
+        36
+      ],
+      "pixel_values_shape": [
+        1296,
+        1176
+      ],
+      "final_image_tokens": 324,
+      "tensor_shapes": {
+        "pixel_values": [
+          1296,
+          1176
+        ],
+        "image_grid_thw": [
+          1,
+          3
+        ]
+      }
+    }
+  }
+}

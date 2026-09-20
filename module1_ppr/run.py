@@ -1,4 +1,4 @@
-"""Train and evaluate PBridge with the frozen MedMO-8B reader."""
+"""Train and evaluate PBridge with the frozen Lingshu-7B reader."""
 
 from __future__ import annotations
 
@@ -13,13 +13,7 @@ import torch
 from torch.nn import functional as F
 
 from model import PPRMoE, TOP_CONTEXT
-from reader import (
-    FrozenReader,
-    LABELS,
-    MEDMO8B_DIR,
-    READER_KEY,
-    READER_NAME,
-)
+from reader import FrozenReader, LABELS, READER_KEY
 
 
 ROOT = Path(__file__).resolve().parent
@@ -141,6 +135,8 @@ def stage1(
     losses: list[float] = []
     rank_losses: list[float] = []
     balance_losses: list[float] = []
+    best_loss = float("inf")
+    best_state: dict[str, torch.Tensor] | None = None
     model.train()
     for epoch in range(MAX_STAGE1_EPOCHS):
         scores, routing, chosen = model(
@@ -157,6 +153,12 @@ def stage1(
         losses.append(float(total.detach().cpu()))
         rank_losses.append(float(rank_loss.detach().cpu()))
         balance_losses.append(float(balance_loss.detach().cpu()))
+        if losses[-1] < best_loss:
+            best_loss = losses[-1]
+            best_state = {
+                name: parameter.detach().clone()
+                for name, parameter in model.state_dict().items()
+            }
         if epoch == 0 or (epoch + 1) % 500 == 0:
             print(
                 f"stage1 epoch={epoch + 1} loss={losses[-1]:.6f} "
@@ -172,8 +174,16 @@ def stage1(
         )
         if summary["converged"]:
             break
+    if best_state is None:
+        raise RuntimeError("Stage 1 produced no checkpoint")
+    model.load_state_dict(best_state)
+    saved_index = int(np.argmin(losses))
     result = {
         **summary,
+        "saved_epoch": saved_index + 1,
+        "saved_loss": losses[saved_index],
+        "rank_saved": rank_losses[saved_index],
+        "balance_saved": balance_losses[saved_index],
         "rank_final": rank_losses[-1],
         "balance_final": balance_losses[-1],
         "loss_history": losses,
@@ -185,7 +195,7 @@ def stage1(
 
 def stage2(
     model: PPRMoE,
-    reader: FrozenReader,
+    reader: Any,
     rows: list[dict[str, Any]],
     data: dict[str, np.ndarray],
     device: torch.device,
@@ -201,6 +211,8 @@ def stage2(
     ce_losses: list[float] = []
     rank_losses: list[float] = []
     balance_losses: list[float] = []
+    best_loss = float("inf")
+    best_state: dict[str, torch.Tensor] | None = None
     model.train()
     for epoch in range(STAGE2_MAX_EPOCHS):
         order = np.arange(len(rows))
@@ -247,6 +259,12 @@ def stage2(
         ce_losses.append(float(np.mean(epoch_values[1])))
         rank_losses.append(float(np.mean(epoch_values[2])))
         balance_losses.append(float(np.mean(epoch_values[3])))
+        if losses[-1] < best_loss:
+            best_loss = losses[-1]
+            best_state = {
+                name: parameter.detach().clone()
+                for name, parameter in model.state_dict().items()
+            }
         print(
             f"stage2 epoch={epoch + 1} loss={losses[-1]:.6f} "
             f"ce={ce_losses[-1]:.6f} rank={rank_losses[-1]:.6f}",
@@ -261,8 +279,17 @@ def stage2(
         )
         if summary["converged"]:
             break
+    if best_state is None:
+        raise RuntimeError("Stage 2 produced no checkpoint")
+    model.load_state_dict(best_state)
+    saved_index = int(np.argmin(losses))
     return {
         **summary,
+        "saved_epoch": saved_index + 1,
+        "saved_loss": losses[saved_index],
+        "ce_saved": ce_losses[saved_index],
+        "rank_saved": rank_losses[saved_index],
+        "balance_saved": balance_losses[saved_index],
         "ce_final": ce_losses[-1],
         "rank_final": rank_losses[-1],
         "balance_final": balance_losses[-1],
@@ -280,12 +307,22 @@ def checkpoint_path() -> Path:
 def train(
     device_name: str,
     batch_size: int,
+    seed: int,
+    warm_start: Path | None,
 ) -> None:
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
     device = torch.device(device_name)
     data = load_assets("train")
     reader = FrozenReader(device_name)
     rows = load_rows("train")
     model = PPRMoE(reader.hidden_size).to(device)
+    if warm_start is not None:
+        initial = torch.load(warm_start, map_location=device, weights_only=True)
+        model.load_state_dict(initial["state_dict"])
+        print(f"warm start: {warm_start}", flush=True)
     stage1_result = stage1(model, data, device)
     print(
         f"stage1 converged={stage1_result['converged']} "
@@ -313,15 +350,21 @@ def train(
     torch.save(
         {
             "state_dict": model.state_dict(),
-            "reader": READER_NAME,
-            "reader_model_dir": str(MEDMO8B_DIR),
+            "reader": reader.reader_name,
+            "reader_key": reader.reader_key,
+            "reader_model_dir": str(reader.model_dir),
             "reader_dim": reader.hidden_size,
             "experts": 6,
             "top_experts": 2,
             "candidate_features": "q, z_i, utility_proxy",
             "utility_train_target": "gold-conditioned counterfactual margin",
             "utility_inference": "no-RAG-prediction counterfactual margin",
+            "image_min_pixels": reader.image_min_pixels,
+            "image_max_pixels": reader.image_max_pixels,
+            "visual_token_mode": reader.visual_token_mode,
+            "warm_start": str(warm_start) if warm_start is not None else None,
             "prefix_position_encoding": "preserved reader-native multimodal MRoPE",
+            "seed": int(seed),
             "stage1": stage1_result,
             "stage2": stage2_result,
         },
@@ -330,9 +373,15 @@ def train(
     write_json(
         output.with_suffix(".json"),
         {
-            "reader": READER_NAME,
-            "reader_model_dir": str(MEDMO8B_DIR),
+            "reader": reader.reader_name,
+            "reader_key": reader.reader_key,
+            "reader_model_dir": str(reader.model_dir),
             "checkpoint": str(output),
+            "seed": int(seed),
+            "image_min_pixels": reader.image_min_pixels,
+            "image_max_pixels": reader.image_max_pixels,
+            "visual_token_mode": reader.visual_token_mode,
+            "warm_start": str(warm_start) if warm_start is not None else None,
             "stage1": {
                 key: value
                 for key, value in stage1_result.items()
@@ -397,7 +446,10 @@ def predict(
             dim=-1,
         ).cpu().numpy()
         if start == 0 or end == len(rows) or end % 100 == 0:
-            print(f"{READER_NAME} PPR MoE: {end}/{len(rows)}", flush=True)
+            print(
+                f"{reader.reader_name} PPR MoE: {end}/{len(rows)}",
+                flush=True,
+            )
     output = {
         "scores": scores.cpu().numpy(),
         "ranks": ranks.cpu().numpy(),
@@ -417,10 +469,17 @@ def evaluate(
     data = load_assets("test")
     rows = load_rows("test")
     gold = answer_indices(rows)
+    checkpoint = torch.load(
+        checkpoint_path(),
+        map_location="cpu",
+        weights_only=True,
+    )
+    default_image_min = 3136
+    default_image_max = 12845056
     metrics = {
         "method": "PBridge",
-        "reader": READER_NAME,
-        "reader_model_dir": str(MEDMO8B_DIR),
+        "reader": checkpoint["reader"],
+        "reader_model_dir": checkpoint["reader_model_dir"],
         "dataset": "PediatricsMQA fixed 8:2 split",
         "split": "test",
         "metrics": evaluate_probabilities(probabilities, gold),
@@ -433,14 +492,20 @@ def evaluate(
             "router_input": "concat(q, z_i, utility_proxy_i)",
             "expert_input_dim": 1536,
             "reader_prefix_tokens": 3,
-            "prefix_position_encoding": "preserved reader-native multimodal MRoPE",
-            "reader_hidden_size": int(
-                torch.load(
-                    checkpoint_path(),
-                    map_location="cpu",
-                    weights_only=True,
-                )["reader_dim"]
+            "image_min_pixels": checkpoint.get(
+                "image_min_pixels",
+                default_image_min,
             ),
+            "image_max_pixels": checkpoint.get(
+                "image_max_pixels",
+                default_image_max,
+            ),
+            "visual_token_mode": checkpoint.get(
+                "visual_token_mode",
+                "native_multiple",
+            ),
+            "prefix_position_encoding": "preserved reader-native multimodal MRoPE",
+            "reader_hidden_size": int(checkpoint["reader_dim"]),
             "utility_inference": (
                 "counterfactual margin relative to the no-RAG predicted "
                 "option; no test answer used"
@@ -473,17 +538,72 @@ def evaluate(
     print(json.dumps(metrics, indent=2, ensure_ascii=False), flush=True)
 
 
+def baseline(
+    device_name: str,
+    batch_size: int,
+) -> None:
+    reader = FrozenReader(device_name)
+    rows = load_rows("test")
+    probabilities = np.empty((len(rows), 4), dtype=np.float32)
+    for start in range(0, len(rows), batch_size):
+        end = min(start + batch_size, len(rows))
+        tasks = [(index, []) for index in range(start, end)]
+        logits = reader.logits(rows, tasks)
+        probabilities[start:end] = torch.softmax(
+            logits.float(),
+            dim=-1,
+        ).cpu().numpy()
+        if start == 0 or end == len(rows) or end % 100 == 0:
+            print(
+                f"{reader.reader_name} No-RAG: {end}/{len(rows)}",
+                flush=True,
+            )
+    gold = answer_indices(rows)
+    metrics = {
+        "method": "No-RAG",
+        "reader": reader.reader_name,
+        "reader_model_dir": str(reader.model_dir),
+        "dataset": "PediatricsMQA fixed 8:2 split",
+        "split": "test",
+        "metrics": evaluate_probabilities(probabilities, gold),
+        "metadata": {
+            "protocol": "A/B/C/D next-token logits",
+            "visual_token_mode": reader.visual_token_mode,
+            "image_min_pixels": reader.image_min_pixels,
+            "image_max_pixels": reader.image_max_pixels,
+        },
+    }
+    out_dir = ARTIFACTS / READER_KEY
+    write_json(out_dir / "no_rag_metrics.json", metrics)
+    np.savez_compressed(
+        out_dir / "no_rag_predictions.npz",
+        probabilities=probabilities,
+        gold=gold,
+    )
+    reader.close()
+    print(json.dumps(metrics, indent=2, ensure_ascii=False), flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["train", "evaluate"])
+    parser.add_argument("command", choices=["train", "evaluate", "baseline"])
     parser.add_argument("--device", default="cuda:3")
     parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--seed", type=int, default=20260918)
+    parser.add_argument("--warm-start", type=Path)
     args = parser.parse_args()
     torch.set_float32_matmul_precision("high")
     if args.command == "train":
-        train(args.device, args.batch_size)
-    else:
+        train(
+            args.device,
+            args.batch_size,
+            args.seed,
+            args.warm_start,
+        )
+    elif args.command == "evaluate":
         evaluate(args.device, args.batch_size)
+    else:
+        baseline(args.device, args.batch_size)
 
 
 if __name__ == "__main__":

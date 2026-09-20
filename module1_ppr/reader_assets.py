@@ -12,13 +12,7 @@ import pyarrow.parquet as pq
 import torch
 
 from gme_assets import KNOWLEDGE_JSONL, OUT as GME_OUT, read_jsonl
-from reader import (
-    FrozenReader,
-    LABELS,
-    MEDMO8B_DIR,
-    READER_KEY,
-    READER_NAME,
-)
+from reader import FrozenReader, LABELS, READER_KEY
 
 
 OUT = Path(__file__).resolve().parent / "artifacts"
@@ -36,7 +30,7 @@ def load_rows(split: str) -> list[dict[str, Any]]:
 
 
 def probabilities(
-    reader: FrozenReader,
+    reader: Any,
     rows: list[dict[str, Any]],
     tasks: list[tuple[int, list[str]]],
     batch_size: int,
@@ -70,16 +64,35 @@ def prepare(
     split: str,
     device_name: str,
     batch_size: int,
+    shard_index: int = 0,
+    num_shards: int = 1,
 ) -> dict[str, Any]:
-    reader = FrozenReader(device_name)
-    rows = load_rows(split)
+    if num_shards < 1 or not 0 <= shard_index < num_shards:
+        raise ValueError(
+            f"Invalid shard {shard_index} for num_shards={num_shards}"
+        )
+    all_rows = load_rows(split)
     knowledge = read_jsonl(KNOWLEDGE_JSONL)
     retrieval_path = GME_OUT / f"{split}_retrieval.npz"
     with np.load(retrieval_path, allow_pickle=False) as archive:
         retrieval = {key: archive[key] for key in archive.files}
-    candidate_indices = retrieval["candidate_indices"]
-    if len(rows) != len(candidate_indices):
+    if len(all_rows) != len(retrieval["candidate_indices"]):
         raise RuntimeError("Reader rows and GME retrieval rows differ")
+    boundaries = np.linspace(
+        0,
+        len(all_rows),
+        num_shards + 1,
+        dtype=np.int64,
+    )
+    row_start = int(boundaries[shard_index])
+    row_end = int(boundaries[shard_index + 1])
+    rows = all_rows[row_start:row_end]
+    retrieval = {
+        key: value[row_start:row_end]
+        for key, value in retrieval.items()
+    }
+    candidate_indices = retrieval["candidate_indices"]
+    reader = FrozenReader(device_name)
 
     no_rag_tasks = [(index, []) for index in range(len(rows))]
     no_rag = probabilities(
@@ -87,7 +100,7 @@ def prepare(
         rows,
         no_rag_tasks,
         batch_size,
-        f"{READER_NAME} {split} no-rag",
+        f"{reader.reader_name} {split} no-rag",
     )
     single_tasks = [
         (
@@ -102,7 +115,7 @@ def prepare(
         rows,
         single_tasks,
         batch_size,
-        f"{READER_NAME} {split} single-prior",
+        f"{reader.reader_name} {split} single-prior",
     ).reshape(len(rows), candidate_indices.shape[1], 4)
 
     predicted = no_rag.argmax(axis=1)
@@ -119,6 +132,7 @@ def prepare(
         "query_embeddings": retrieval["query_embeddings"],
         "candidate_embeddings": retrieval["candidate_embeddings"],
         "utility_proxy": utility_proxy.astype(np.float32),
+        "no_rag_probabilities": no_rag,
     }
     if split == "test":
         output_values["candidate_indices"] = candidate_indices
@@ -135,15 +149,27 @@ def prepare(
         output_values["utility_target"] = utility_target.astype(np.float32)
         output_values["gold"] = gold
 
-    reader_dir = OUT / READER_KEY
+    reader_dir = OUT / reader.reader_key
     reader_dir.mkdir(parents=True, exist_ok=True)
-    output = reader_dir / f"{split}_assets.npz"
+    suffix = (
+        ""
+        if num_shards == 1
+        else f".shard-{shard_index:03d}-of-{num_shards:03d}"
+    )
+    output = reader_dir / f"{split}_assets{suffix}.npz"
     np.savez_compressed(output, **output_values)
     metadata = {
-        "reader": READER_NAME,
-        "reader_model_dir": str(MEDMO8B_DIR),
+        "reader": reader.reader_name,
+        "reader_model_dir": str(reader.model_dir),
+        "visual_token_mode": reader.visual_token_mode,
+        "image_min_pixels": reader.image_min_pixels,
+        "image_max_pixels": reader.image_max_pixels,
         "split": split,
         "samples": len(rows),
+        "row_start": row_start,
+        "row_end": row_end,
+        "shard_index": shard_index,
+        "num_shards": num_shards,
         "candidates": int(candidate_indices.shape[1]),
         "utility_target": (
             "gold-conditioned train-only counterfactual margin"
@@ -156,7 +182,7 @@ def prepare(
         ),
         "single_prior_protocol": "one raw knowledge_text in the reader prompt",
     }
-    (reader_dir / f"{split}_assets.json").write_text(
+    (reader_dir / f"{split}_assets{suffix}.json").write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
@@ -164,15 +190,79 @@ def prepare(
     return {"output": str(output), **metadata}
 
 
+def merge_shards(
+    split: str,
+    num_shards: int,
+) -> dict[str, Any]:
+    reader_dir = OUT / READER_KEY
+    shard_paths = [
+        reader_dir
+        / f"{split}_assets.shard-{index:03d}-of-{num_shards:03d}.npz"
+        for index in range(num_shards)
+    ]
+    missing = [str(path) for path in shard_paths if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"Missing shard files: {missing}")
+    shards = []
+    for path in shard_paths:
+        with np.load(path, allow_pickle=False) as archive:
+            shards.append({key: archive[key] for key in archive.files})
+    keys = set(shards[0])
+    if any(set(shard) != keys for shard in shards[1:]):
+        raise RuntimeError("Reader asset shards have inconsistent keys")
+    merged = {
+        key: np.concatenate([shard[key] for shard in shards], axis=0)
+        for key in sorted(keys)
+    }
+    expected = len(load_rows(split))
+    if any(len(value) != expected for value in merged.values()):
+        sizes = {key: len(value) for key, value in merged.items()}
+        raise RuntimeError(
+            f"Merged assets do not match {expected} rows: {sizes}"
+        )
+    output = reader_dir / f"{split}_assets.npz"
+    np.savez_compressed(output, **merged)
+    metadata = {
+        "reader": "Lingshu-7B",
+        "reader_model_dir": "/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint",
+        "visual_token_mode": "native_multiple",
+        "image_min_pixels": 3136,
+        "image_max_pixels": 12845056,
+        "reader_key": READER_KEY,
+        "split": split,
+        "samples": expected,
+        "num_shards": num_shards,
+        "output": str(output),
+    }
+    (reader_dir / f"{split}_assets.json").write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return metadata
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--split", choices=["train", "test"], required=True)
     parser.add_argument("--device", default="cuda:3")
     parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--shard-index", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
+    parser.add_argument("--merge-shards", action="store_true")
     args = parser.parse_args()
+    if args.merge_shards:
+        result = merge_shards(args.split, args.num_shards)
+    else:
+        result = prepare(
+            args.split,
+            args.device,
+            args.batch_size,
+            args.shard_index,
+            args.num_shards,
+        )
     print(
         json.dumps(
-            prepare(args.split, args.device, args.batch_size),
+            result,
             indent=2,
             ensure_ascii=False,
         ),

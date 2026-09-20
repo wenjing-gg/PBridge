@@ -1,0 +1,20 @@
+{
+  "method": "No-RAG",
+  "reader": "Lingshu-7B",
+  "reader_model_dir": "/data/cyf/codes/YYY/VQA/Lingshu-7B/checkpoint",
+  "dataset": "PediatricsMQA fixed 8:2 split",
+  "split": "test",
+  "metrics": {
+    "n": 413,
+    "correct": 253,
+    "accuracy": 0.612590799031477,
+    "nll": 1.10338294506073,
+    "brier": 0.554344654083252
+  },
+  "metadata": {
+    "protocol": "A/B/C/D next-token logits",
+    "visual_token_mode": "native_multiple",
+    "image_min_pixels": 3136,
+    "image_max_pixels": 12845056
+  }
+}
