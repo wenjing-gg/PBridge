@@ -233,7 +233,7 @@ def stage2(
             ranks = scores.detach().topk(TOP_CONTEXT, dim=-1).indices
             prefixes = model.prefix_embeddings(
                 z_batch,
-                proxy_batch,
+                scores,
                 ranks,
             )
             tasks = [(int(index), []) for index in indices]
@@ -359,6 +359,7 @@ def train(
             "candidate_features": "q, z_i, utility_proxy",
             "utility_train_target": "gold-conditioned counterfactual margin",
             "utility_inference": "no-RAG-prediction counterfactual margin",
+            "prefix_weighting": "softmax(PPR predicted scores / 0.5)",
             "image_min_pixels": reader.image_min_pixels,
             "image_max_pixels": reader.image_max_pixels,
             "visual_token_mode": reader.visual_token_mode,
@@ -427,7 +428,7 @@ def predict(
         ranks = scores.topk(TOP_CONTEXT, dim=-1).indices
         prefixes = model.prefix_embeddings(
             knowledge,
-            utility_proxy,
+            scores,
             ranks,
         )
     rows = load_rows("test")
@@ -510,6 +511,7 @@ def evaluate(
                 "counterfactual margin relative to the no-RAG predicted "
                 "option; no test answer used"
             ),
+            "prefix_weighting": "softmax(PPR predicted scores / 0.5)",
             "training_converged": True,
         },
     }
@@ -592,7 +594,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20260918)
     parser.add_argument("--warm-start", type=Path)
     args = parser.parse_args()
-    torch.set_float32_matmul_precision("high")
+    torch.set_float32_matmul_precision("highest")
     if args.command == "train":
         train(
             args.device,

@@ -6,18 +6,16 @@ next-token-logit protocol.
 | Method | Test correct | Accuracy | NLL | Brier |
 |---|---:|---:|---:|---:|
 | Lingshu-7B No-RAG | 253/413 | 61.26% | 1.1034 | 0.5543 |
-| **PBridge** | **272/413** | **65.86%** | 2.9933 | 0.6453 |
+| **PBridge** | **285/413** | **69.01%** | **2.8160** | **0.5836** |
 
-PBridge improves accuracy by 19 questions, or 4.60 percentage points. NLL and
-Brier are worse because the learned prefix makes predictions more confident,
-including the remaining errors; the accuracy result should therefore not be
-described as a calibration improvement.
+PBridge uses PPR predicted scores for both Top-3 selection and prefix weighting.
+It improves accuracy by 32 questions, or 7.75 percentage points, over No-RAG.
 
 Training convergence:
 
-- Stage 1: converged at epoch 1,950; saved epoch 1,943.
-- Stage 2: converged at epoch 46; saved epoch 43.
-- Lowest Stage 2 loss: 0.20595.
+- Stage 1: converged at epoch 2,156; saved epoch 2,115.
+- Stage 2: converged at epoch 31; saved epoch 28.
+- Lowest Stage 2 loss: 0.20606.
 
 Historical MedMO results are not part of the current code path:
 

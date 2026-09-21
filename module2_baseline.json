@@ -1,0 +1,18 @@
+{
+  "name": "PBridge-B",
+  "backbone": "Lingshu-7B",
+  "prefix_weighting": "softmax(PPR predicted scores / 0.5)",
+  "checkpoint": "module1_ppr/artifacts/lingshu_7b/ppr_moe.pt",
+  "checkpoint_sha256": "029e086960819c012104bc1cea62d1e2b816362b917090697bfdddb8c60df822",
+  "test_accuracy": 0.6900726392251816,
+  "test_correct": 285,
+  "test_size": 413,
+  "module1_sha256": {
+    "__init__.py": "69b90125d477ea99743cb369d80fafda2f6fd3aeacb4e59dc65b335818e6638d",
+    "gme_assets.py": "37eb5954c91d8146b6bd398fe66f96f04f462357e308e3cbd032246bf619494a",
+    "model.py": "2f950418058da45cb6cfdaf5c52cf26fad1a21f0e1d60ce5f4e674ad99d4f579",
+    "reader.py": "184a81ef76d04994e9c4358cdb826d860481e66b90a168f4cc0d547712b233a8",
+    "reader_assets.py": "6bef0e31b0afc74ca9945ca332030851c11dc70867343eeca627a4d9cb8aae03",
+    "run.py": "b391466596835e8ce0ff3cf5c8c2472e3ef1cbf03adcfa1d3a8d4aa7aec08ce8"
+  }
+}

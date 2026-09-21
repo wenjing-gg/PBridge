@@ -6,10 +6,10 @@
   "split": "test",
   "metrics": {
     "n": 413,
-    "correct": 272,
-    "accuracy": 0.6585956416464891,
-    "nll": 2.993332624435425,
-    "brier": 0.6452922224998474
+    "correct": 285,
+    "accuracy": 0.6900726392251816,
+    "nll": 2.815978765487671,
+    "brier": 0.583575427532196
   },
   "metadata": {
     "checkpoint": "/data/cyf/codes/YYY/VQA/PBridge/module1_ppr/artifacts/lingshu_7b/ppr_moe.pt",
@@ -26,6 +26,7 @@
     "prefix_position_encoding": "preserved reader-native multimodal MRoPE",
     "reader_hidden_size": 3584,
     "utility_inference": "counterfactual margin relative to the no-RAG predicted option; no test answer used",
+    "prefix_weighting": "softmax(PPR predicted scores / 0.5)",
     "training_converged": true
   }
 }

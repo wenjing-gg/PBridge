@@ -14,3 +14,9 @@ module1_ppr/artifacts/**/*.npz
 
 # Keep the final PPR checkpoint, but ignore transient checkpoints.
 module1_ppr/artifacts/**/*.ckpt
+
+# Rebuildable experiment outputs
+module2_alignment/outputs/
+module2_probe/outputs/attention_probe/
+module2_probe/outputs/mechanism/
+module2_probe/outputs/mechanism_dev/

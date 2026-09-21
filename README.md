@@ -17,13 +17,17 @@ The converged checkpoint reaches:
 | Method | Correct | Accuracy |
 |---|---:|---:|
 | Lingshu-7B No-RAG | 253/413 | 61.26% |
-| **PBridge** | **272/413** | **65.86%** |
+| **PBridge** | **285/413** | **69.01%** |
 
 ## Structure
 
 - `module1_ppr/`: retrieval assets, Utility construction, training and
   evaluation.
+- `module1_validation/robustness.py`: multi-seed and image-group robustness
+  validation for the default predicted-score weighting.
 - `module2_probe/`: Lingshu image-preprocessing validation.
+- `module2_baseline.json`: immutable Module 1 baseline used by all Module 2
+  experiments.
 - `docs/ppr_method.md`: algorithm.
 - `docs/results.md`: results.
 - `module2_analyze.md`: Module 2 validation report.
@@ -50,3 +54,6 @@ python -m module2_probe.check_image_preprocess
 ```
 
 Local Lingshu and GME model weights are not committed.
+
+Module 2 is locked to the current PBridge-B checkpoint. Module 2 may read and
+wrap Module 1, but it must not retrain, replace, or edit Module 1.

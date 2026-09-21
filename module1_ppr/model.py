@@ -96,7 +96,7 @@ class PPRMoE(nn.Module):
     def prefix_embeddings(
         self,
         knowledge: torch.Tensor,
-        utility_proxy: torch.Tensor,
+        predicted_scores: torch.Tensor,
         ranks: torch.Tensor,
         temperature: float = 0.5,
     ) -> torch.Tensor:
@@ -105,8 +105,8 @@ class PPRMoE(nn.Module):
             1,
             ranks.unsqueeze(-1).expand(-1, -1, knowledge.shape[-1]),
         ).float()
-        selected_u = torch.gather(utility_proxy, 1, ranks).float()
-        alpha = torch.softmax(selected_u / temperature, dim=-1)
+        selected_scores = torch.gather(predicted_scores, 1, ranks).float()
+        alpha = torch.softmax(selected_scores / temperature, dim=-1)
         positioned = (
             selected_z * alpha.unsqueeze(-1)
             + self.position.unsqueeze(0)

@@ -40,12 +40,15 @@ g_{i,e}s_i^{(e)}.
 
 ## 4. Prior-prefix construction
 
-Top-3 候选先按 Utility 分配权重，并加入知识位置向量：
+Top-3 候选使用 PPR-MoE 的预测分数分配权重，并加入知识位置向量：
 
 \[
-\alpha_i=\operatorname{softmax}(u_i/0.5),\qquad
+\alpha_i=\operatorname{softmax}(s_i/0.5),\qquad
 \widetilde{\mathbf z}_i=\alpha_i\mathbf z_i+\mathbf e_i.
 \]
+
+因此同一组预测分数同时决定 Top-3 排序和三条知识的相对强度；
+gold-conditioned Utility 只监督训练损失，不进入 prefix 构造。
 
 随后用可学习线性层把三个向量投影到 Lingshu 的 3,584 维词嵌入空间：
 
